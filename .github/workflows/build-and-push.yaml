@@ -1,0 +1,27 @@
+name: Build and Push Runner Image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build image
+        run: |
+          podman build -f dev-bot/Dockerfile.runner \
+            -t quay.io/stolostron/installer-ai-dev:latest \
+            -t quay.io/stolostron/installer-ai-dev:${GITHUB_SHA::7} \
+            .
+
+      - name: Push to Quay
+        run: |
+          podman login quay.io -u ${{ secrets.QUAY_USERNAME }} -p ${{ secrets.QUAY_PASSWORD }}
+          podman push quay.io/stolostron/installer-ai-dev:latest
+          podman push quay.io/stolostron/installer-ai-dev:${GITHUB_SHA::7}
